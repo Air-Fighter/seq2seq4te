@@ -7,6 +7,9 @@
 
 torch.class("Seq2Seq")
 
+function Seq2Seq:__init()
+end
+
 function Seq2Seq:build(opt, embeddings)
     local word_dim = embeddings:size(2)
     local emb_e = nn.LookupTableMaskZero(embeddings:size(1), word_dim)

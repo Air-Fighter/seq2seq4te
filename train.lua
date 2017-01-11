@@ -56,8 +56,8 @@ optim_configs = {
     momentum = opt.momentum
 }
 
-
-local enc, dec = Seq2Seq:build(opt, dict.embeddings)
+local seq2seq_entail = Seq2Seq()
+local enc, dec = seq2seq_entail:build(opt, dict.embeddings)
 -- Concatenate the enc's and dec's parameters
 local x, dl_dx = nn.Container():add(enc):add(dec):getParameters()
 
@@ -69,7 +69,7 @@ for iter=1,opt.iter_nums do
         -- Get data from SNLI:get_batch_data, the parameters in order are:
         -- 'train'/'dev', 'entail'/'neutral'/'contradict', dict, index of batch start, batch size
         local encInSeq, decInSeq, decOutSeq = snli:get_batch_data('dev', 'entail', dict, i, opt.batch_size)
-        local feval = Seq2Seq:get_feval(encInSeq, decInSeq, decOutSeq, x, dl_dx, opt)
+        local feval = seq2seq_entail:get_feval(encInSeq, decInSeq, decOutSeq, x, dl_dx, opt)
         local _, fs = optim.adadelta(feval, x, optim_configs)
         err = err + fs[1]
     end
@@ -78,5 +78,5 @@ for iter=1,opt.iter_nums do
 end
 
 local encInSeq = torch.Tensor({{0,0,0,0,4,5,6}}):t()
-local test_out = Seq2Seq:forward(encInSeq, opt)
+local test_out = seq2seq_entail:forward(encInSeq, opt)
 print(test_out)
