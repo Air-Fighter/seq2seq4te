@@ -78,5 +78,5 @@ for iter=1,opt.iter_nums do
 end
 
 local encInSeq = torch.Tensor({{0,0,0,0,4,5,6}}):t()
-local test_out = Seq2Seq:eval(encInSeq, opt)
+local test_out = Seq2Seq:forward(encInSeq, opt)
 print(test_out)

@@ -104,7 +104,7 @@ function Seq2Seq:get_feval(encInSeq, decInSeq, decOutSeq, x, dl_dx, opt)
     return self.feval
 end
 
-function Seq2Seq:eval(encInSeq, opt)
+function Seq2Seq:forward(encInSeq, opt)
     local enc = self.enc
     local dec = self.dec
     enc:forward(encInSeq)
