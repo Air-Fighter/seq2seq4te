@@ -107,6 +107,15 @@ function Seq2Seq:get_feval(encInSeq, decInSeq, decOutSeq, x, dl_dx, opt)
     return self.feval
 end
 
+function Seq2Seq:eval(encInSeq, decInSeq, decOutSeq, opt)
+    -- This function is to return the loss of validation data
+    local encOut = self.enc:forward(encInSeq)
+    forwardConnect(self.enc, self.dec, opt)
+    local decOut = self.dec:forward(decInSeq)
+    local err = self.criterion:forward(decOut, decOutSeq)
+    return err
+end
+
 function Seq2Seq:forward(encInSeq, opt)
     local enc = self.enc
     local dec = self.dec

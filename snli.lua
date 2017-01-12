@@ -275,76 +275,72 @@ function SNLI:get_dev_contradict(dict)
     return self.dev_contradict
 end
 
-function SNLI:get_batch_data(set, relation, dict, batch_index, batch_size)
-    if self.batch_data ~= nil then
-        return self.batch_data["hypotheses"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["hypotheses"]:size(1))}}]:t(),
-                self.batch_data["sos_premises"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["sos_premises"]:size(1))}}]:t(),
-                self.batch_data["premises_eos"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["premises_eos"]:size(1))}}]:t()
+function SNLI:get_batch_data(set, relation, dict, batch_index, batch_size, useGPU)
+    if self.batch_data == nil then
+        if set == 'train' then
+            if relation == 'entail' then
+                self.batch_data = self:get_train_entail(dict)
+            end
+            if relation == 'neutral' then
+                self.batch_data = self:get_train_neutral(dict)
+            end
+            if relation == 'contradict' then
+                 self.batch_data = self:get_train_contradict(dict)
+            end
+        end
+        if set == 'dev' then
+            if relation == 'entail' then
+                self.batch_data = self:get_dev_entail(dict)
+            end
+            if relation == 'neutral' then
+                self.batch_data = self:get_dev_neutral(dict)
+            end
+            if relation == 'contradict' then
+                self.batch_data = self:get_dev_contradict(dict)
+            end
+        end
+        if self.batch_data == nil then printerr('check out the name of dataset') end
+        if useGPU then
+            self.batch_data['hypotheses'] = self.batch_data['hypotheses']:cuda()
+            self.batch_data['sos_premises'] = self.batch_data['sos_premises']:cuda()
+            self.batch_data['premises_eos'] = self.batch_data['premises_eos']:cuda()
+        end
     end
+    return self.batch_data["hypotheses"][{{batch_index,
+        math.min(batch_index + batch_size - 1, self.batch_data["hypotheses"]:size(1))}}]:t(),
+    self.batch_data["sos_premises"][{{batch_index,
+        math.min(batch_index + batch_size - 1, self.batch_data["sos_premises"]:size(1))}}]:t(),
+    self.batch_data["premises_eos"][{{batch_index,
+        math.min(batch_index + batch_size - 1, self.batch_data["premises_eos"]:size(1))}}]:t()
 
-    if set == 'train' then
-        if relation == 'entail' then
-            self.batch_data = self:get_train_entail(dict)
-            return self.batch_data["hypotheses"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["hypotheses"]:size(1))}}]:t(),
-                self.batch_data["sos_premises"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["sos_premises"]:size(1))}}]:t(),
-                self.batch_data["premises_eos"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["premises_eos"]:size(1))}}]:t()
-        end
-        if relation == 'neutral' then
-            self.batch_data = self:get_train_neutral(dict)
-            return self.batch_data["hypotheses"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["hypotheses"]:size(1))}}]:t(),
-                self.batch_data["sos_premises"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["sos_premises"]:size(1))}}]:t(),
-                self.batch_data["premises_eos"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["premises_eos"]:size(1))}}]:t()
-        end
-        if relation == 'contradict' then
-            self.batch_data = self:get_train_contradict(dict)
-            return self.batch_data["hypotheses"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["hypotheses"]:size(1))}}]:t(),
-                self.batch_data["sos_premises"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["sos_premises"]:size(1))}}]:t(),
-                self.batch_data["premises_eos"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["premises_eos"]:size(1))}}]:t()
-        end
-    end
-    if set == 'dev' then
-        if relation == 'entail' then
-            self.batch_data = self:get_dev_entail(dict)
-            return self.batch_data["hypotheses"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["hypotheses"]:size(1))}}]:t(),
-                self.batch_data["sos_premises"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["sos_premises"]:size(1))}}]:t(),
-                self.batch_data["premises_eos"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["premises_eos"]:size(1))}}]:t()
-        end
-        if relation == 'neutral' then
-            self.batch_data = self:get_dev_neutral(dict)
-            return self.batch_data["hypotheses"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["hypotheses"]:size(1))}}]:t(),
-                self.batch_data["sos_premises"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["sos_premises"]:size(1))}}]:t(),
-                self.batch_data["premises_eos"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["premises_eos"]:size(1))}}]:t()
-        end
-        if relation == 'contradict' then
-            self.batch_data = self:get_dev_contradict(dict)
-            return self.batch_data["hypotheses"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["hypotheses"]:size(1))}}]:t(),
-                self.batch_data["sos_premises"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["sos_premises"]:size(1))}}]:t(),
-                self.batch_data["premises_eos"][{{
-                    batch_index, math.min(batch_index + batch_size - 1, self.batch_data["premises_eos"]:size(1))}}]:t()
-        end
-    end
 end
 
 function SNLI:reset_batch_data()
     self.batch_data = nil
+end
+
+function SNLI:get_set_size(set, relation, dict)
+    -- This function can return how many examples are contained in a certain dataset
+    if set == 'train' then
+        if relation == 'entail' then
+            return self:get_train_entail(dict)["hypotheses"]:size(1)
+        end
+        if relation == 'neutral' then
+            return self:get_train_neutral(dict)["hypotheses"]:size(1)
+        end
+        if relation == 'contradict' then
+            return self:get_train_contradict(dict)["hypotheses"]:size(1)
+        end
+    end
+    if set == 'dev' then
+        if relation == 'entail' then
+            return self:get_dev_entail(dict)['hypotheses']:size(1)
+        end
+        if relation == 'neutral' then
+            return self:get_dev_neutral(dict)['hypotheses']:size(1)
+        end
+        if relation == 'contradict' then
+            return self:get_dev_contradict(dict)['hypotheses']:size(1)
+        end
+    end
 end

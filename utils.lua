@@ -135,3 +135,21 @@ StopWords = Set{"a", "an", "and", "are", "as", "at", "be", "by",
 function isStopWord(word)
     return StopWords[word]
 end
+
+function draw_progress_bar(index, total, len)
+    for i =1, len+2 do
+        io.write('\b')
+    end
+    step = math.ceil(index/total * len)
+    io.write('[')
+    for i =1, step do
+        io.write('=')
+    end
+    if step < len then
+        io.write('>')
+    end
+    for i=step+2, len do
+        io.write('-')
+    end
+    io.write(']')
+end
