@@ -137,9 +137,6 @@ function isStopWord(word)
 end
 
 function draw_progress_bar(index, total, len)
-    for i =1, len+2 do
-        io.write('\b')
-    end
     step = math.ceil(index/total * len)
     io.write('[')
     for i =1, step do
@@ -152,4 +149,7 @@ function draw_progress_bar(index, total, len)
         io.write('-')
     end
     io.write(']')
+    for i =1, len+2 do
+        io.write('\b')
+    end
 end

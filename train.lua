@@ -99,7 +99,7 @@ for iter=1,opt.iter_nums do
         err = err + fs[1]
     end
     io.write('\n')
-    print(string.format("\tNLL err = %f ", iter, err))
+    print(string.format("\tNLL err = %f", err))
     local end_time = os.clock()
     print(string.format("\tRun time: %f seconds", end_time - start_time))
 
