@@ -20,8 +20,10 @@ require 'wordembedding'
 require 'snli'
 
 cmd = torch.CmdLine()
-
-cmd:text("--------Data Options    --------")
+cmd:text("--------Running Options--------")
+cmd:option('-gpu_id', 3, [[Id of which gpu is used to train the model, -1 is to use CPU]])
+cmd:option('-valid_freq', 5, [[Frequency of validation]])
+cmd:text("--------Data Options--------")
 cmd:option('-data_prefix','./data/small-', [[Path to the training small-train.txt and small-dev.txt]])
 cmd:option('-embedding_file', './data/small-wordembedding', [[Path to the pre-trained embedding file]])
 cmd:text("--------Optimizer Options--------")
@@ -45,7 +47,7 @@ dict:trim_by_counts(snli.word_counts)
 dict:extend_by_counts(snli.train_word_counts)
 
 opt.vocab_size = #dict.vocab
-opt.seq_len = 7 -- length of the encoded sequence (with padding)
+opt.seq_len = snli.max_len
 opt.sos = dict:get_word_idx("<SOS>")
 opt.eos = dict:get_word_idx("<EOS>")
 
@@ -57,7 +59,16 @@ optim_configs = {
 }
 
 local seq2seq_entail = Seq2Seq()
-local enc, dec = seq2seq_entail:build(opt, dict.embeddings)
+local enc, dec, criterion = seq2seq_entail:build(opt, dict.embeddings)
+if opt.gpu_id > 0 then
+    local cutorch = require 'cutorch'
+    local cunn = require 'cunn'
+    cutorch.setDevice(opt.gpu_id)
+    enc = enc:cuda()
+    dec = dec:cuda()
+    criterion = criterion:cuda()
+end
+
 -- Concatenate the enc's and dec's parameters
 local x, dl_dx = nn.Container():add(enc):add(dec):getParameters()
 
@@ -68,15 +79,25 @@ for iter=1,opt.iter_nums do
     for i=1, 2, opt.batch_size do
         -- Get data from SNLI:get_batch_data, the parameters in order are:
         -- 'train'/'dev', 'entail'/'neutral'/'contradict', dict, index of batch start, batch size
-        local encInSeq, decInSeq, decOutSeq = snli:get_batch_data('dev', 'entail', dict, i, opt.batch_size)
+        local encInSeq, decInSeq, decOutSeq = snli:get_batch_data('train', 'entail', dict, i, opt.batch_size)
+        if opt.gpu_id > 0 then
+            encInSeq = encInSeq:cuda()
+            decInSeq = decInSeq:cuda()
+            decOutSeq = decOutSeq:cuda()
+        end
+
         local feval = seq2seq_entail:get_feval(encInSeq, decInSeq, decOutSeq, x, dl_dx, opt)
         local _, fs = optim.adadelta(feval, x, optim_configs)
         err = err + fs[1]
     end
 
     print(string.format("Iteration %d ; NLL err = %f ", iter, err))
+
+    if iter % opt.valid_freq == 0 then
+
+    end
 end
 
-local encInSeq = torch.Tensor({{0,0,0,0,4,5,6}}):t()
+local encInSeq = torch.Tensor({{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,5,6}}):t()
 local test_out = seq2seq_entail:forward(encInSeq, opt)
 print(test_out)

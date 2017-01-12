@@ -98,7 +98,7 @@ function Seq2Seq:get_feval(encInSeq, decInSeq, decOutSeq, x, dl_dx, opt)
         local gradOutput = criterion:backward(decOut, decOutSeq)
         dec:backward(decInSeq, gradOutput)
         backwardConnect(enc, dec, opt)
-        local zeroTensor = torch.Tensor(encOut):zero()
+        local zeroTensor = encOut:zero()
         enc:backward(encInSeq, zeroTensor)
 
         return err, dl_dx

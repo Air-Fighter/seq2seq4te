@@ -24,6 +24,7 @@ function SNLI:__init(snli_path_prefix, train_size, lower_case, verbose)
 
     self.train_word_counts = {}
     self.word_counts = {}
+    self.max_len = 0
 
     if snli_path_prefix ~= nil then
         self.verbose = false
@@ -71,6 +72,8 @@ function SNLI:_load_data_file(file_path, word_counter)
                         hypothese = moses.map(hypothese, function(i,v) return string.lower(v) end)
                     end
 
+                    if #premise+1 > self.max_len then self.max_len = #premise + 1 end
+                    if #hypothese+1 > self.max_len then self.max_len = #hypothese + 1 end
                     for i, v in ipairs(premise) do self:inc_word_counts(v, word_counter) end
                     for i, v in ipairs(hypothese) do self:inc_word_counts(v, word_counter) end
 
@@ -96,23 +99,18 @@ function SNLI:get_train_entail(dict)
     if self.train_entail == nil then
         local hypotheses = {}
         local premises = {}
-        local max_hlen = 0
-        local max_plen = 0
         for i=1, #self.train do
             if self.train[i]['label'] == self.relations["entailment"] then
                 hypotheses[#hypotheses+1]=dict:convert(stringx.split(self.train[i]['hypothese']))
-                max_hlen = math.max(max_hlen, hypotheses[#hypotheses]:size(1))
                 premises[#premises+1]=dict:convert(stringx.split(self.train[i]['premise']))
-                max_plen = math.max(max_plen, premises[#premises]:size(1))
             end
         end
 
-        local max_len = math.max(max_plen+1, max_hlen)
-        local t_hypotheses = torch.Tensor(#hypotheses, max_len):fill(0)
-        local t_sos_premises = torch.Tensor(#premises, max_len):fill(0)
-        local t_premises_eos = torch.Tensor(#premises, max_len):fill(0)
+        local t_hypotheses = torch.Tensor(#hypotheses, self.max_len):fill(0)
+        local t_sos_premises = torch.Tensor(#premises, self.max_len):fill(0)
+        local t_premises_eos = torch.Tensor(#premises, self.max_len):fill(0)
         for i=1, #hypotheses do
-            t_hypotheses[i][{{max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
+            t_hypotheses[i][{{self.max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
             t_sos_premises[i][1] = dict:get_word_idx("<SOS>")
             t_sos_premises[i][{{2, premises[i]:size(1)+1}}] = premises[i]
             t_premises_eos[i][{{1, premises[i]:size(1)}}] = premises[i]
@@ -131,23 +129,18 @@ function SNLI:get_train_neutral(dict)
     if self.train_neutral == nil then
         local hypotheses = {}
         local premises = {}
-        local max_hlen = 0
-        local max_plen = 0
         for i=1, #self.train do
             if self.train[i]['label'] == self.relations["neutral"] then
                 hypotheses[#hypotheses+1]=dict:convert(stringx.split(self.train[i]['hypothese']))
-                max_hlen = math.max(max_hlen, hypotheses[#hypotheses]:size(1))
                 premises[#premises+1]=dict:convert(stringx.split(self.train[i]['premise']))
-                max_plen = math.max(max_plen, premises[#premises]:size(1))
             end
         end
 
-        local max_len = math.max(max_plen+1, max_hlen)
-        local t_hypotheses = torch.Tensor(#hypotheses, max_len):fill(0)
-        local t_sos_premises = torch.Tensor(#premises, max_len):fill(0)
-        local t_premises_eos = torch.Tensor(#premises, max_len):fill(0)
+        local t_hypotheses = torch.Tensor(#hypotheses, self.max_len):fill(0)
+        local t_sos_premises = torch.Tensor(#premises, self.max_len):fill(0)
+        local t_premises_eos = torch.Tensor(#premises, self.max_len):fill(0)
         for i=1, #hypotheses do
-            t_hypotheses[i][{{max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
+            t_hypotheses[i][{{self.max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
             t_sos_premises[i][1] = dict:get_word_idx("<SOS>")
             t_sos_premises[i][{{2, premises[i]:size(1)+1}}] = premises[i]
             t_premises_eos[i][{{1, premises[i]:size(1)}}] = premises[i]
@@ -166,23 +159,18 @@ function SNLI:get_train_contradict(dict)
     if self.train_contradict == nil then
         local hypotheses = {}
         local premises = {}
-        local max_hlen = 0
-        local max_plen = 0
         for i=1, #self.train do
             if self.train[i]['label'] == self.relations["contradiction"] then
                 hypotheses[#hypotheses+1]=dict:convert(stringx.split(self.train[i]['hypothese']))
-                max_hlen = math.max(max_hlen, hypotheses[#hypotheses]:size(1))
                 premises[#premises+1]=dict:convert(stringx.split(self.train[i]['premise']))
-                max_plen = math.max(max_plen, premises[#premises]:size(1))
             end
         end
 
-        local max_len = math.max(max_plen+1, max_hlen)
-        local t_hypotheses = torch.Tensor(#hypotheses, max_len):fill(0)
-        local t_sos_premises = torch.Tensor(#premises, max_len):fill(0)
-        local t_premises_eos = torch.Tensor(#premises, max_len):fill(0)
+        local t_hypotheses = torch.Tensor(#hypotheses, self.max_len):fill(0)
+        local t_sos_premises = torch.Tensor(#premises, self.max_len):fill(0)
+        local t_premises_eos = torch.Tensor(#premises, self.max_len):fill(0)
         for i=1, #hypotheses do
-            t_hypotheses[i][{{max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
+            t_hypotheses[i][{{self.max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
             t_sos_premises[i][1] = dict:get_word_idx("<SOS>")
             t_sos_premises[i][{{2, premises[i]:size(1)+1}}] = premises[i]
             t_premises_eos[i][{{1, premises[i]:size(1)}}] = premises[i]
@@ -201,23 +189,18 @@ function SNLI:get_dev_entail(dict)
     if self.dev_entail == nil then
         local hypotheses = {}
         local premises = {}
-        local max_hlen = 0
-        local max_plen = 0
         for i=1, #self.dev do
             if self.dev[i]['label'] == self.relations["entailment"] then
                 hypotheses[#hypotheses+1]=dict:convert(stringx.split(self.dev[i]['hypothese']))
-                max_hlen = math.max(max_hlen, hypotheses[#hypotheses]:size(1))
                 premises[#premises+1]=dict:convert(stringx.split(self.dev[i]['premise']))
-                max_plen = math.max(max_plen, premises[#premises]:size(1))
             end
         end
 
-        local max_len = math.max(max_plen+1, max_hlen)
-        local t_hypotheses = torch.Tensor(#hypotheses, max_len):fill(0)
-        local t_sos_premises = torch.Tensor(#premises, max_len):fill(0)
-        local t_premises_eos = torch.Tensor(#premises, max_len):fill(0)
+        local t_hypotheses = torch.Tensor(#hypotheses, self.max_len):fill(0)
+        local t_sos_premises = torch.Tensor(#premises, self.max_len):fill(0)
+        local t_premises_eos = torch.Tensor(#premises, self.max_len):fill(0)
         for i=1, #hypotheses do
-            t_hypotheses[i][{{max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
+            t_hypotheses[i][{{self.max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
             t_sos_premises[i][1] = dict:get_word_idx("<SOS>")
             t_sos_premises[i][{{2, premises[i]:size(1)+1}}] = premises[i]
             t_premises_eos[i][{{1, premises[i]:size(1)}}] = premises[i]
@@ -236,23 +219,18 @@ function SNLI:get_dev_neutral(dict)
     if self.dev_neutral == nil then
         local hypotheses = {}
         local premises = {}
-        local max_hlen = 0
-        local max_plen = 0
         for i=1, #self.dev do
             if self.dev[i]['label'] == self.relations["neutral"] then
                 hypotheses[#hypotheses+1]=dict:convert(stringx.split(self.dev[i]['hypothese']))
-                max_hlen = math.max(max_hlen, hypotheses[#hypotheses]:size(1))
                 premises[#premises+1]=dict:convert(stringx.split(self.dev[i]['premise']))
-                max_plen = math.max(max_plen, premises[#premises]:size(1))
             end
         end
 
-        local max_len = math.max(max_plen+1, max_hlen)
-        local t_hypotheses = torch.Tensor(#hypotheses, max_len):fill(0)
-        local t_sos_premises = torch.Tensor(#premises, max_len):fill(0)
-        local t_premises_eos = torch.Tensor(#premises, max_len):fill(0)
+        local t_hypotheses = torch.Tensor(#hypotheses, self.max_len):fill(0)
+        local t_sos_premises = torch.Tensor(#premises, self.max_len):fill(0)
+        local t_premises_eos = torch.Tensor(#premises, self.max_len):fill(0)
         for i=1, #hypotheses do
-            t_hypotheses[i][{{max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
+            t_hypotheses[i][{{self.max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
             t_sos_premises[i][1] = dict:get_word_idx("<SOS>")
             t_sos_premises[i][{{2, premises[i]:size(1)+1}}] = premises[i]
             t_premises_eos[i][{{1, premises[i]:size(1)}}] = premises[i]
@@ -271,23 +249,18 @@ function SNLI:get_dev_contradict(dict)
     if self.dev_contradict == nil then
         local hypotheses = {}
         local premises = {}
-        local max_hlen = 0
-        local max_plen = 0
         for i=1, #self.dev do
             if self.dev[i]['label'] == self.relations["contradiction"] then
                 hypotheses[#hypotheses+1]=dict:convert(stringx.split(self.dev[i]['hypothese']))
-                max_hlen = math.max(max_hlen, hypotheses[#hypotheses]:size(1))
                 premises[#premises+1]=dict:convert(stringx.split(self.dev[i]['premise']))
-                max_plen = math.max(max_plen, premises[#premises]:size(1))
             end
         end
 
-        local max_len = math.max(max_plen+1, max_hlen)
-        local t_hypotheses = torch.Tensor(#hypotheses, max_len):fill(0)
-        local t_sos_premises = torch.Tensor(#premises, max_len):fill(0)
-        local t_premises_eos = torch.Tensor(#premises, max_len):fill(0)
+        local t_hypotheses = torch.Tensor(#hypotheses, self.max_len):fill(0)
+        local t_sos_premises = torch.Tensor(#premises, self.max_len):fill(0)
+        local t_premises_eos = torch.Tensor(#premises, self.max_len):fill(0)
         for i=1, #hypotheses do
-            t_hypotheses[i][{{max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
+            t_hypotheses[i][{{self.max_len+1-hypotheses[i]:size(1), -1}}] = hypotheses[i]
             t_sos_premises[i][1] = dict:get_word_idx("<SOS>")
             t_sos_premises[i][{{2, premises[i]:size(1)+1}}] = premises[i]
             t_premises_eos[i][{{1, premises[i]:size(1)}}] = premises[i]
