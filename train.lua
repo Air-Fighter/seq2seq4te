@@ -81,8 +81,8 @@ for iter=1,opt.iter_nums do
     local err = 0
     print(string.format("Iteration %d: ", iter))
     local start_time = os.clock()
+    io.write("\tProgress: ")
     for i=1, snli:get_set_size('train', opt.relation, dict), opt.batch_size do
-        io.write("\tProgress: ")
         draw_progress_bar(i, snli:get_set_size('train', opt.relation, dict), 40)
         -- Get data from SNLI:get_batch_data, the parameters in order are:
         -- 'train'/'dev', 'entail'/'neutral'/'contradict', dict, index of batch start, batch size
